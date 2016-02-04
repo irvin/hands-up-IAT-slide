@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+  	<meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>handsup-IAT-slide</title>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/reveal.js/3.2.0/css/reveal.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/reveal.js/3.2.0/css/theme/white.csscss" />
+    <style>
+      * { box-sizing: border-box; }
+      
+      .present {
+        height: 100%;
+        position: relative;
+        top: 0 !important;
+        border: 1px solid grey;
+      }
+      .present span.type {
+        position: absolute;
+        top: 10%;
+        font-size: 1.25em;
+        &.left { left: 5%; }
+        &.right { right: 5%; }
+      }
+      .present .testcase {
+        position: absolute;
+        font-size: 2em;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <script id="slide-template" type="text/x-handlebars-template">
+      {{#each slides}}
+      <section>
+        {{#each data}}
+        <section>
+          <span class="type left">{{this.tLeft}}</span>
+          <span class="type right">{{this.tRight}}</span>
+          <span class="testcase">{{{this.tCase}}}</span>
+        </section>
+        {{/each}}
+      </section>
+      {{/each}}
+    </script>
+    
+    <div class="reveal">
+      <div class="slides"></div>
+    </div>
+
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/3.0.1/handlebars.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/reveal.js/3.2.0/js/reveal.js"></script>
+
+    <script>
+    // Gender-Science IAT test
+      var genderEn = {
+        'Gender': {
+          'Male': ['Man', 'Boy', 'Father', 'Male', 'Grandpa', 'Husband', 'Son', 'Uncle'],
+          'Female': ['Girl', 'Female', 'Aunt', 'Daughter', 'Wife', 'Woman', 'Mother', 'Grandma']
+        },
+        'Science': {
+          'Liberal Arts	': ['Philosophy', 'Humanities', 'Arts', 'Literature', 'English', 'Music', 'History'],
+          'Science': ['Biology', 'Physics', 'Chemistry', 'Math', 'Geology', 'Astronomy', 'Engineering']
+        }
+      };
+      var genderZh = {
+        '性別': {
+          '男性': ['男性', '男人', '兒子', '男孩', '父親', '爺爺', '叔叔', '丈夫'],
+          '女性': ['女兒', '婦女', '女性', '奶奶', '女孩', '阿姨', '妻子', '母親']
+        },
+        '學科': {
+          '文科': ['音樂', '人類學', '哲學', '英語', '歷史', '文學', '藝術'],
+          '理科': ['數學', '工程學', '物理學', '地質學', '化學', '天文學', '生物學']
+        }
+      };
+      
+      
+      var iatDat = genderEn; // Switch the data set as you wish
+      
+      var source = $("#slide-template").html();
+      var slideTmpl = Handlebars.compile(source);
+      
+      var slideDats = [];
+      
+      for (cat in iatDat) {
+        var catDat = iatDat[cat];
+        var catKeys = Object.keys(catDat);
+        var catItems = catDat[catKeys[0]].concat(catDat[catKeys[1]]);
+        catItems.sort(function() {
+          return 0.5 - Math.random()
+        });
+      
+        var catSlideDats = []
+      
+        catSlideDats.push({
+          'tLeft': catKeys[0],
+          'tRight': catKeys[1],
+          'tCase': cat
+        });
+      
+        for (i = 0; i < catItems.length; i++) {
+          catSlideDats.push({
+            'tLeft': catKeys[0],
+            'tRight': catKeys[1],
+            'tCase': catItems[i]
+          });
+        };
+        slideDats.push({
+          'data': catSlideDats
+        });
+      };
+      
+      
+      // combine test
+      var allItems = [];
+      for (cat in iatDat) {
+        for (subcat in iatDat[cat]) {
+          allItems = allItems.concat(iatDat[cat][subcat]);
+        };
+      };
+      allItems.sort(function() {
+        return 0.5 - Math.random()
+      });
+      
+      var catKeys = [];
+      for (cat in iatDat) {
+        catKeys.push(Object.keys(iatDat[cat]));
+      };
+      
+      // Permote catKeys[0] to combine with catKeys[1]
+      var permoteResult = catKeys[0].reduce(function permute(res, item, key, arr) {
+        return res.concat(arr.length > 1 && arr.slice(0, key).concat(arr.slice(key + 1)).reduce(permute, []).map(function(perm) {
+          return [item].concat(perm);
+        }) || item);
+      }, []);
+      
+      var joinTest = [];
+      permoteResult.forEach(function(ele) {
+        joinTest.push({
+          'tLeft': ele[0] + ' / ' + catKeys[1][0],
+          'tRight': ele[1] + ' / ' + catKeys[1][1]
+        });
+      });
+      
+      joinTest.forEach(function(test, idx) {
+        var mergeSlideDats = [];
+      
+        mergeSlideDats.push({
+          'tLeft': test.tLeft,
+          'tRight': test.tRight,
+          'tCase': Object.keys(iatDat).join(' x ') + '<br>' + idx
+        });
+      
+        for (i = 0; i < allItems.length; i++) {
+          mergeSlideDats.push({
+            'tLeft': test.tLeft,
+            'tRight': test.tRight,
+            'tCase': allItems[i]
+          });
+        };
+        slideDats.push({
+          'data': mergeSlideDats
+        });
+      });
+      
+      $(slideTmpl({
+        'slides': slideDats
+      })).appendTo('.slides');
+      
+      Reveal.initialize({
+        transition: 'none'
+      });
+    </script>
+
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-510482-17', 'auto');
+      ga('send', 'pageview');
+    </script>
+  </body>
+</html>
